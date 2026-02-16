@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>agent-session-skill — Repo Browser</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/markdown.min.js"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 48px;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.header-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  fill: #007acc;
+}
+
+.header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-right: 12px;
+}
+
+.header-tagline {
+  font-size: 12px;
+  color: #858585;
+}
+
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  background: #252526;
+  border-right: 1px solid #3c3c3c;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #252526;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.sidebar-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #bbbbbb;
+  padding: 10px 16px 6px 16px;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 3px 0 3px 0;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: #cccccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-item:hover {
+  background: #2a2d2e;
+}
+
+.tree-item.active {
+  background: #37373d;
+  color: #ffffff;
+}
+
+.tree-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #007acc;
+}
+
+.tree-item {
+  position: relative;
+}
+
+.tree-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.chevron svg {
+  width: 12px;
+  height: 12px;
+  fill: #858585;
+}
+
+.chevron.open {
+  transform: rotate(90deg);
+}
+
+.folder-children {
+  overflow: hidden;
+}
+
+.folder-children.collapsed {
+  display: none;
+}
+
+.content-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: #1e1e1e;
+}
+
+.content-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.content-panel::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.content-panel::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 5px;
+}
+
+.content-panel::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.file-tab-bar {
+  height: 35px;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.file-tab {
+  height: 35px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #ffffff;
+  background: #1e1e1e;
+  border-right: 1px solid #252526;
+  border-top: 1px solid #007acc;
+}
+
+.file-tab-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+}
+
+.file-content-wrapper {
+  padding: 16px 24px 48px 24px;
+  min-height: 100%;
+}
+
+.file-content-wrapper pre {
+  margin: 0;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.file-content-wrapper pre code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  background: transparent !important;
+  padding: 0 !important;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #555;
+  text-align: center;
+  padding: 40px;
+}
+
+.welcome-screen h2 {
+  font-size: 22px;
+  font-weight: 400;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.welcome-screen p {
+  font-size: 13px;
+  color: #555;
+}
+
+.breadcrumb {
+  font-size: 12px;
+  color: #858585;
+  padding: 6px 24px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #2d2d2d;
+}
+
+.breadcrumb span {
+  color: #cccccc;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg class="header-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#007acc"/>
+  </svg>
+  <span class="header-title">agent-session-skill</span>
+  <span class="header-tagline">Universal session management skill for AI coding agents</span>
+</div>
+
+<div class="main-container">
+  <div class="sidebar">
+    <div class="sidebar-header">Explorer</div>
+    <div id="fileTree"></div>
+  </div>
+  <div class="content-panel" id="contentPanel">
+    <div class="welcome-screen" id="welcomeScreen">
+      <h2>agent-session-skill</h2>
+      <p>Select a file from the sidebar to view its contents</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const FILES = {};
+
+FILES["README.md"] = `# agent-session-skill
+
+> Universal session management skill for AI coding agents
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## What It Does
+
+AI coding agents (Claude Code, Cursor, Aider, Windsurf, Cline) burn through token budgets and session limits in minutes without pacing. This skill gives any agent self-awareness of its resource consumption, enabling it to:
+
+- Track estimated token/tool-call usage across a session
+- Pace work using a Pomodoro-style sprint/rest cadence
+- Detect and respond to rate limits with exponential backoff
+- Gracefully degrade from full work → planning-only → stop
+- Split budgets across multi-agent orchestrations
+- Log session activity for debugging and optimization
+
+## Quick Start
+
+1. Copy \`SKILL.md\` into your project root
+2. Copy \`config/session-defaults.yaml\` alongside it
+3. Reference it from your agent's steering file:
+
+**Claude Code** — add to \`CLAUDE.md\`:
+\`\`\`
+Read and follow all instructions in SKILL.md for session management.
+\`\`\`
+
+**Cursor** — add to \`.cursorrules\`:
+\`\`\`
+@include SKILL.md
+\`\`\`
+
+**Aider** — add to \`.aider.conf.yml\`:
+\`\`\`
+read: SKILL.md
+\`\`\`
+
+4. Optionally copy \`scripts/session-timer.sh\` for countdown sleep support
+5. Optionally copy \`templates/SESSION_LOG.md\` as your log starter
+
+## Supported Platforms
+
+| Platform     | Integration File   | Status  |
+|-------------|-------------------|---------|
+| Claude Code | CLAUDE.md         | ✅ Full  |
+| Cursor      | .cursorrules      | ✅ Full  |
+| Aider       | .aider.conf.yml   | ✅ Full  |
+| Windsurf    | .windsurfrules    | ✅ Full  |
+| Cline       | .clinerules       | ✅ Full  |
+| Generic     | Any system prompt  | ✅ Full  |
+
+## Configuration
+
+All tunable parameters live in \`config/session-defaults.yaml\`. Key settings:
+
+- \`budget_window_minutes\` — Rolling time window (default: 300 min / 5 hrs)
+- \`estimated_max_tool_calls\` — Max tool calls per window (default: 80)
+- \`sprint_tool_calls\` — Tool calls per sprint (default: 20)
+- \`rest_duration_minutes\` — Rest between sprints (default: 5)
+- \`budget_thresholds\` — Green/Yellow/Red/Critical percentages
+
+See the config file for the full list with documentation.
+
+## Contributing
+
+Contributions welcome! Please open an issue first to discuss changes. PRs should include updates to relevant example files if the skill format changes.
+
+## License
+
+MIT — see [LICENSE](LICENSE)`;
+
+FILES["SKILL.md"] = `# Session Management Skill v1.0
+
+This skill provides session-aware pacing and resource management for AI coding agents. Follow all instructions below throughout your entire working session.
+
+---
+
+## 1. Session Budget Awareness
+
+You are operating under a finite session budget. Track your resource usage throughout the session.
+
+### Default Budget Parameters
+- **Budget Window:** 300 minutes (5 hours)
+- **Estimated Max Tool Calls:** 80 per window
+- **Estimated Max Tokens:** 200,000 per window
+
+Override these defaults if a \`config/session-defaults.yaml\` file is present.
+
+### Budget Tracking
+After every tool call, mentally increment your internal call counter. After every milestone (completing a file, module, test suite, or logical unit of work), report your status:
+
+\`\`\`
+📊 Checkpoint: ~[N] tool calls used | Budget: [ZONE] | Sprint [X] of session
+\`\`\`
+
+### Budget Zones
+
+| Zone     | Usage   | Color  | Behavior                                    |
+|----------|---------|--------|---------------------------------------------|
+| GREEN    | 0-50%   | 🟢     | Full speed. All operations permitted.        |
+| YELLOW   | 50-75%  | 🟡     | Conserve. Batch operations, skip optional.   |
+| RED      | 75-90%  | 🔴     | Planning only. Outlines, TODOs, docs.        |
+| CRITICAL | 90-100% | ⛔     | Stop. Write final status and halt all work.  |
+
+---
+
+## 2. Work Cadence — Pomodoro Mode
+
+Structure all work into sprint cycles to prevent budget burnout.
+
+### Sprint Cycle
+1. **SPRINT** — Work for up to 20 tool calls or ~15 minutes of activity
+2. **CHECKPOINT** — Summarize progress, update tracking docs, estimate budget zone
+3. **REST** — Execute synchronous sleep for 5 minutes (see Sleep Commands below)
+4. **REPEAT** — Begin next sprint
+
+After **4 consecutive sprints**, take an **extended rest of 15 minutes**.
+
+### Sleep Commands
+
+**Linux:**
+\`\`\`bash
+echo "⏸️  Resting until $(date -d '+N minutes' '+%H:%M:%S')..." && sleep $((N * 60)) && echo "▶️  Resuming work."
+\`\`\`
+
+**macOS:**
+\`\`\`bash
+echo "⏸️  Resting for N minutes at $(date '+%H:%M:%S')..." && sleep $((N * 60)) && echo "▶️  Resuming work at $(date '+%H:%M:%S')."
+\`\`\`
+
+**With countdown script (if available):**
+\`\`\`bash
+bash scripts/session-timer.sh N
+\`\`\`
+
+Replace \`N\` with the number of minutes. These commands block synchronously, preventing any other activity until the timer completes.
+
+### Pre-Sprint Checklist
+Before starting each sprint, confirm:
+- [ ] What is the specific goal for this sprint?
+- [ ] What is my current budget zone?
+- [ ] Am I continuing previous work or starting something new?
+- [ ] Are there any pending rate limit issues?
+
+---
+
+## 3. Rate Limit Detection and Response
+
+Monitor for signs of rate limiting or resource exhaustion.
+
+### Detection Signals
+- HTTP 429 (Too Many Requests) or 529 (Overloaded) status codes
+- API errors mentioning "rate limit", "capacity", "quota", or "throttle"
+- Unusually slow responses (>30 seconds for simple operations)
+- Repeated failures on the same operation (3+ consecutive failures)
+- Timeout errors
+
+### Response Protocol
+
+**On first detection:**
+1. STOP current work immediately
+2. Log the event to SESSION_LOG.md (if logging enabled)
+3. Execute REST for **5 minutes**
+4. Retry the failed operation once
+
+**On second detection (within same sprint):**
+1. STOP and log
+2. Execute REST for **10 minutes**
+3. Retry once, then continue with reduced scope
+
+**On third detection (within same sprint):**
+1. STOP and log
+2. Execute REST for **30 minutes**
+3. Write status report to PROGRESS.md
+4. Resume in YELLOW zone regardless of actual budget
+
+### Backoff Schedule
+| Attempt | Wait Time | Next Action             |
+|---------|-----------|-------------------------|
+| 1st     | 5 min     | Retry once              |
+| 2nd     | 10 min    | Retry with reduced scope|
+| 3rd     | 30 min    | Status report + resume  |
+| 4th+    | 60 min    | Enter CRITICAL zone     |
+
+---
+
+## 4. Budget Conservation Strategies
+
+Adapt your working style based on your current budget zone.
+
+### GREEN Zone (0-50% used)
+- Full operations: read, write, edit, test, refactor
+- Multi-file changes permitted
+- Exploratory work and research allowed
+- Normal sprint cadence
+
+### YELLOW Zone (50-75% used)
+- Batch file reads (read multiple files in one call where possible)
+- Skip optional improvements (formatting, minor refactors)
+- Prefer editing over rewriting entire files
+- Combine related changes into single operations
+- No exploratory or speculative work
+- Reduce sprint size to 15 tool calls
+
+### RED Zone (75-90% used)
+- **Planning only** — no file edits
+- Write outlines, TODOs, and documentation
+- Summarize remaining work with specific instructions
+- Update PROGRESS.md with detailed next steps
+- Prepare handoff notes for next session
+
+### CRITICAL Zone (90-100% used)
+- **Stop all work immediately**
+- Write final status report including:
+  - What was completed
+  - What is in progress (with state)
+  - What remains (prioritized list)
+  - Any blockers or issues discovered
+- Save to PROGRESS.md and SESSION_LOG.md
+- Do not attempt any further tool calls
+
+### Always
+- Complete the current atomic unit of work before entering a lower zone
+- Never leave files in a broken or half-edited state
+- Commit or save before resting
+
+---
+
+## 5. Multi-Agent Budget Splitting
+
+When operating in a multi-agent configuration with sub-agents:
+
+### Budget Allocation
+- **Orchestrator** reserves **20%** of total session budget for coordination
+- Remaining **80%** is split equally among active sub-agents
+- Example: 80 total calls → Orchestrator gets 16, each of 4 sub-agents gets 16
+
+### Sub-Agent Requirements
+Each sub-agent MUST:
+- Track its own call count independently
+- Report call count when returning results to orchestrator
+- Respect its individual budget allocation
+- Enter its own REST cycles independently
+
+### Orchestrator Requirements
+The orchestrator MUST:
+- Track total calls across all agents
+- Flag any sub-agent task that exceeds 15 tool calls as "expensive"
+- Redistribute unused budget from completed sub-agents
+- Enter YELLOW zone when aggregate usage hits 50%
+
+### Sub-Agent Budget Exceeded Protocol
+If a sub-agent exceeds its allocated budget:
+1. Sub-agent completes current atomic operation
+2. Sub-agent reports: "⚠️ Budget exceeded. [N] calls used of [M] allocated."
+3. Orchestrator decides: reallocate from other agents OR queue remaining work
+4. Sub-agent does NOT continue without orchestrator approval
+
+---
+
+## 6. Session Logging
+
+Maintain a session log for debugging and optimization.
+
+### Log File
+Write entries to \`SESSION_LOG.md\` (or configured \`log_file\` path).
+
+### Entry Format
+\`\`\`
+## [TIMESTAMP] — [EVENT_TYPE]
+- **Sprint:** [N]
+- **Tool Calls:** [count] / [budget]
+- **Zone:** [GREEN|YELLOW|RED|CRITICAL]
+- **Event:** [description]
+- **Files Touched:** [list]
+\`\`\`
+
+### Event Types
+- \`SESSION_START\` — Beginning of session with config summary
+- \`SPRINT_COMPLETE\` — End of a sprint with summary
+- \`REST_START\` — Entering rest period
+- \`REST_END\` — Resuming from rest
+- \`RATE_LIMIT\` — Rate limit detected
+- \`ZONE_CHANGE\` — Budget zone transition
+- \`SESSION_END\` — End of session with final summary
+
+### End-of-Session Summary
+At session end, append a summary block:
+\`\`\`
+## Session Summary
+- **Duration:** [X] minutes
+- **Total Tool Calls:** [N]
+- **Sprints Completed:** [N]
+- **Rate Limits Hit:** [N]
+- **Files Created:** [list]
+- **Files Modified:** [list]
+- **Key Accomplishments:** [list]
+- **Remaining Work:** [list]
+\`\`\`
+
+---
+
+## 7. Platform-Specific Notes
+
+### Claude Code
+- Include this file via \`CLAUDE.md\`: "Read and follow SKILL.md"
+- Sleep commands use \`bash\` tool
+- Sub-agents inherit from AGENTS.md
+- Permission prompts count toward cognitive load but not tool calls
+
+### Cursor
+- Include via \`.cursorrules\`: reference SKILL.md content
+- Cursor uses background/foreground agent distinction
+- Background agents should have smaller sprint sizes (10 calls)
+
+### Aider
+- Include via \`.aider.conf.yml\` read directive
+- Aider's /run command can execute sleep scripts
+- Map "tool calls" to aider edit cycles
+
+### Windsurf
+- Include via \`.windsurfrules\` or Cascade settings
+- Windsurf Flows map to sprints naturally
+- Use Windsurf's built-in terminal for sleep commands
+
+### Cline
+- Include via \`.clinerules\`
+- Cline's auto-approve mode burns budget fast — reduce sprint size to 10
+- Use Cline's terminal integration for sleep
+
+### Generic / Custom Agents
+- Paste SKILL.md content into your system prompt or agent instructions
+- Adapt sleep commands to your agent's shell execution capability
+- If no shell access, use the checkpoint/reporting system without automated sleep`;
+
+FILES["LICENSE"] = `MIT License
+
+Copyright (c) 2025 Agent Session Skill Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
+
+FILES["config/session-defaults.yaml"] = `# Agent Session Skill — Configuration
+# Copy this file alongside SKILL.md and adjust values for your environment.
+
+# === Budget Window ===
+budget_window_minutes: 300        # Rolling time window (5 hours)
+estimated_max_tool_calls: 80      # Conservative estimate per window
+estimated_max_tokens: 200000      # Estimated token budget per window
+
+# === Sprint Configuration ===
+sprint:
+  tool_calls: 20                  # Max tool calls per sprint
+  duration_minutes: 15            # Max duration per sprint
+  rest_minutes: 5                 # Rest duration between sprints
+  extended_rest_minutes: 15       # Rest after N sprints
+  sprints_before_extended_rest: 4 # Sprints before extended rest
+
+# === Budget Thresholds (percentage of budget used) ===
+thresholds:
+  green: 50                       # 0% to this value = GREEN
+  yellow: 75                      # green to this value = YELLOW
+  red: 90                         # yellow to this value = RED
+  critical: 100                   # red to this value = CRITICAL
+
+# === Rate Limit Response ===
+rate_limit:
+  backoff_minutes: [5, 10, 30, 60]  # Progressive backoff durations
+  max_retries_per_sprint: 3         # Max retries before escalating
+  slow_response_threshold_seconds: 30  # Threshold for "slow" detection
+
+# === Logging ===
+logging:
+  enabled: true
+  log_file: "SESSION_LOG.md"
+  log_checkpoints: true           # Log every checkpoint
+  log_zone_changes: true          # Log zone transitions
+  log_rate_limits: true           # Log rate limit events
+
+# === Multi-Agent ===
+multi_agent:
+  enabled: false
+  orchestrator_reserve_percent: 20   # Budget reserved for orchestrator
+  sub_agent_max_calls_flag: 15       # Flag tasks exceeding this
+  sub_agent_sprint_size: 10          # Smaller sprints for sub-agents`;
+
+FILES["scripts/session-timer.sh"] = `#!/usr/bin/env bash
+# session-timer.sh — Countdown sleep timer for AI coding agents
+# Usage: bash session-timer.sh [minutes]
+# Compatible with macOS and Linux
+
+set -euo pipefail
+
+MINUTES="\${1:-5}"
+TOTAL_SECONDS=$((MINUTES * 60))
+ELAPSED=0
+
+echo ""
+echo "⏸️  SESSION REST — Sleeping for \${MINUTES} minute(s)"
+echo "   Started at: $(date '+%Y-%m-%d %H:%M:%S')"
+echo "   Will resume at: $(date -v+\${MINUTES}M '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -d "+\${MINUTES} minutes" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo 'unknown')"
+echo "   ────────────────────────────────────"
+
+while [ $ELAPSED -lt $TOTAL_SECONDS ]; do
+    REMAINING=$((TOTAL_SECONDS - ELAPSED))
+    REMAINING_MIN=$((REMAINING / 60))
+    REMAINING_SEC=$((REMAINING % 60))
+    printf "\\r   ⏳ %02d:%02d remaining..." "$REMAINING_MIN" "$REMAINING_SEC"
+
+    # Sleep in 30-second increments (or remaining time if less)
+    if [ $REMAINING -ge 30 ]; then
+        sleep 30
+        ELAPSED=$((ELAPSED + 30))
+    else
+        sleep $REMAINING
+        ELAPSED=$((ELAPSED + REMAINING))
+    fi
+done
+
+printf "\\r   ✅ Rest complete!                    \\n"
+echo "   ────────────────────────────────────"
+echo "▶️  RESUMING at $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""`;
+
+FILES["templates/SESSION_LOG.md"] = `# Session Log
+
+## Session Start — [TIMESTAMP]
+- **Config:** session-defaults.yaml
+- **Budget:** [max_tool_calls] calls / [budget_window] min window
+- **Mode:** [single-agent | multi-agent]
+- **Objective:** [session goal]
+
+---
+
+## [TIMESTAMP] — SPRINT_COMPLETE
+- **Sprint:** 1
+- **Tool Calls:** 18 / 80
+- **Zone:** 🟢 GREEN
+- **Event:** Completed initial project scaffolding
+- **Files Touched:** src/main.py, src/utils.py, tests/test_main.py
+
+## [TIMESTAMP] — REST_START
+- **Duration:** 5 minutes
+- **Reason:** Scheduled sprint rest
+
+## [TIMESTAMP] — REST_END
+- **Resuming:** Sprint 2
+
+## [TIMESTAMP] — SPRINT_COMPLETE
+- **Sprint:** 2
+- **Tool Calls:** 37 / 80
+- **Zone:** 🟢 GREEN
+- **Event:** Implemented core API endpoints and validation
+- **Files Touched:** src/api.py, src/validators.py, tests/test_api.py
+
+## [TIMESTAMP] — REST_START
+- **Duration:** 5 minutes
+- **Reason:** Scheduled sprint rest
+
+## [TIMESTAMP] — REST_END
+- **Resuming:** Sprint 3
+
+## [TIMESTAMP] — ZONE_CHANGE
+- **From:** 🟢 GREEN
+- **To:** 🟡 YELLOW
+- **Tool Calls:** 42 / 80
+- **Action:** Reducing sprint size, batching operations
+
+## [TIMESTAMP] — RATE_LIMIT
+- **Sprint:** 3
+- **Tool Calls:** 48 / 80
+- **Zone:** 🟡 YELLOW
+- **Event:** HTTP 429 received on file write operation
+- **Action:** Entering 5-minute backoff rest
+
+---
+
+<!-- Add entries as the session progresses -->
+
+## Session Summary
+- **Duration:** [X] minutes
+- **Total Tool Calls:** [N] / [budget]
+- **Sprints Completed:** [N]
+- **Rate Limits Hit:** [N]
+- **Final Zone:** [ZONE]
+- **Files Created:** [list]
+- **Files Modified:** [list]
+- **Key Accomplishments:** [list]
+- **Remaining Work:** [list]`;
+
+FILES["examples/claude-code.md"] = `# Claude Code Integration
+
+Add the following to your project's \`CLAUDE.md\`:
+
+---
+
+## Session Management
+
+Read and follow all instructions in \`SKILL.md\` for session management throughout this entire session.
+
+### Configuration
+Session parameters are defined in \`config/session-defaults.yaml\`. Key overrides for this project:
+
+- Budget: 80 tool calls per 5-hour window
+- Sprint size: 20 tool calls
+- Rest duration: 5 minutes between sprints
+- Extended rest: 15 minutes after 4 sprints
+
+### Sleep Execution
+When SKILL.md instructs you to rest, use the Bash tool to run:
+\`\`\`bash
+bash scripts/session-timer.sh [MINUTES]
+\`\`\`
+
+### Multi-Agent Note
+If using AGENTS.md with sub-agents, each sub-agent inherits session management
+from SKILL.md. The orchestrator manages budget allocation per Section 5 of the skill.
+
+### Permission Prompts
+Note: Claude Code permission prompts add cognitive overhead but do not count
+as tool calls for budget tracking purposes. To minimize prompt fatigue,
+pre-approve common operations:
+\`\`\`bash
+claude config set permissions.allow "Edit,Read,Write,Bash(git *)"
+\`\`\`
+
+### Recommended CLAUDE.md Structure
+\`\`\`markdown
+# Project: My App
+
+## Required Skills
+Read and follow all instructions in SKILL.md for session management.
+
+## Project Context
+[your project description here]
+
+## Coding Standards
+[your standards here]
+
+## Architecture
+[your architecture notes here]
+\`\`\`
+
+This ensures the agent loads session management awareness before beginning any work.`;
+
+FILES["examples/cursor.md"] = `# Cursor Integration
+
+Add the following to your project's \`.cursorrules\`:
+
+---
+
+## Session Management Skill
+
+The file \`SKILL.md\` in the project root contains session management instructions.
+Follow all instructions in that file throughout this session.
+
+Key points for Cursor:
+- Map each Cursor "edit" or "apply" action as one tool call for budget tracking
+- Background agents (if used) should use a reduced sprint size of 10 tool calls
+- Use the integrated terminal to execute sleep commands from SKILL.md
+- Cursor's Composer counts as the orchestrator in multi-agent scenarios
+
+When executing rest periods, run in the terminal:
+\`\`\`bash
+bash scripts/session-timer.sh 5
+\`\`\`
+
+### Cursor-Specific Budget Mapping
+
+| Cursor Action        | Tool Call Count |
+|---------------------|----------------|
+| File edit/apply     | 1              |
+| File read           | 1              |
+| Terminal command     | 1              |
+| Search/lookup        | 1              |
+| Multi-file edit     | Count each file |
+| Chat response only  | 0 (no tool use) |
+
+### Composer Integration
+When using Cursor Composer for multi-file operations:
+- Each file touched in a Composer action counts as one tool call
+- A single Composer "apply all" with 5 files = 5 tool calls
+- Plan Composer batches carefully in YELLOW zone
+
+### Background Agent Notes
+Cursor background agents operate asynchronously. For session management:
+- Each background task gets a sub-budget of 10 tool calls
+- Background agents should report completion with call count
+- If a background task exceeds 10 calls, flag it to the user`;
+
+FILES["examples/aider.md"] = `# Aider Integration
+
+Add the following to your \`.aider.conf.yml\`:
+
+\`\`\`yaml
+read:
+  - SKILL.md
+  - config/session-defaults.yaml
+\`\`\`
+
+### Mapping Aider Concepts to Session Skill
+
+Aider operates differently from IDE-based agents. Here is how to map concepts:
+
+| Aider Concept          | Session Skill Equivalent     |
+|-----------------------|------------------------------|
+| Edit cycle (prompt→change) | ~3-5 tool calls          |
+| /run command           | 1 tool call                  |
+| /add file              | 1 tool call                  |
+| /commit                | Sprint checkpoint            |
+| /diff review           | 1 tool call                  |
+
+### Recommended Workflow
+
+1. **Start session:** \`/read SKILL.md\` to load session awareness
+2. **Work in sprint-sized batches** of related edits (4-5 edit cycles per sprint)
+3. **After each batch:** \`/commit\` then \`/run bash scripts/session-timer.sh 5\`
+4. **Check budget zone** and adjust pace accordingly
+5. **End session:** \`/run bash scripts/session-timer.sh 0\` (just to log final status)
+
+### Aider-Specific Tips
+
+- Aider's \`/tokens\` command shows actual token usage — use it to calibrate your budget
+- In YELLOW zone: use \`/ask\` for planning instead of \`/code\` to conserve budget
+- In RED zone: use only \`/ask\` for creating outlines and TODO lists
+- Aider's auto-commit feature naturally creates good sprint checkpoints
+- Use \`/map\` sparingly in YELLOW zone — it consumes tokens for repo mapping
+
+### Chat Mode Budget
+When using aider in chat-only mode (\`/ask\`):
+- Chat responses consume tokens but not tool calls
+- However, long conversations still deplete the token budget
+- In YELLOW zone, keep /ask responses focused and brief`;
+
+FILES["examples/generic.md"] = `# Generic Integration Guide
+
+For any AI coding agent or custom agent system:
+
+## Option 1: System Prompt Include
+Copy the full contents of \`SKILL.md\` into your agent's system prompt or
+instructions file. This works with any LLM-based agent that accepts custom
+system prompts.
+
+## Option 2: File Reference
+If your agent can read project files, place \`SKILL.md\` in the project root
+and instruct the agent:
+
+> "Read and follow SKILL.md for session management."
+
+## Option 3: Partial Include
+If token budget for instructions is limited, include at minimum:
+1. Section 1 (Budget Awareness) — the zone system
+2. Section 2 (Pomodoro Mode) — sprint/rest cadence
+3. Section 3 (Rate Limit Detection) — backoff protocol
+
+These three sections provide the core functionality. Sections 4-7 are
+enhancements that improve the experience but are not strictly required.
+
+## Adapting Sleep Commands
+
+If your agent **can** execute shell commands:
+- Use the sleep commands from SKILL.md Section 2 directly
+- Or use \`bash scripts/session-timer.sh N\` for countdown display
+
+If your agent **cannot** execute shell commands:
+- Skip automated sleep — rely on checkpoint reporting instead
+- The agent should report "REST NEEDED — [N] minutes" and pause
+- Wait for the user to manually continue after the specified duration
+- User simply waits the specified time before sending the next message
+
+If your agent has a **different shell mechanism**:
+- Adapt the sleep command to your platform's equivalent
+- The key requirement is synchronous blocking — the agent must not
+  proceed until the rest period completes
+
+## Adapting Tool Call Counting
+
+Different agents have different concepts of "tool calls." General mapping:
+
+| Operation              | Tool Call Count |
+|-----------------------|----------------|
+| File read              | 1              |
+| File write/create      | 1              |
+| File edit/patch        | 1              |
+| Shell/terminal command | 1              |
+| Code search/grep       | 1              |
+| Web search/lookup      | 1              |
+| Multi-file operation   | Count each file |
+| Chat-only response     | 0              |
+
+Adjust \`sprint.tool_calls\` in \`config/session-defaults.yaml\` to match
+your agent's typical throughput per sprint.
+
+## Custom Agent Frameworks
+
+If you are building a custom agent framework:
+
+### LangChain / LangGraph
+- Add SKILL.md content to the system message
+- Instrument tool calls with a counter callback
+- Use the counter to trigger zone changes automatically
+
+### AutoGen
+- Include SKILL.md in the agent's system message
+- Map AutoGen "turns" to sprint boundaries
+- Use GroupChat manager as the orchestrator for multi-agent budgeting
+
+### CrewAI
+- Add SKILL.md to each agent's backstory or goal
+- Map CrewAI "tasks" to sprints
+- The Crew manager acts as the orchestrator for budget splitting
+
+### Custom Python Agents
+\`\`\`python
+# Minimal session management integration
+class SessionManager:
+    def __init__(self, max_calls=80, sprint_size=20):
+        self.max_calls = max_calls
+        self.sprint_size = sprint_size
+        self.call_count = 0
+        self.sprint_count = 0
+
+    def track_call(self):
+        self.call_count += 1
+        if self.call_count % self.sprint_size == 0:
+            self.sprint_count += 1
+            return "REST"  # Signal rest needed
+        return self.get_zone()
+
+    def get_zone(self):
+        pct = (self.call_count / self.max_calls) * 100
+        if pct < 50: return "GREEN"
+        if pct < 75: return "YELLOW"
+        if pct < 90: return "RED"
+        return "CRITICAL"
+\`\`\``;
+
+const TREE_STRUCTURE = [
+  { name: "README.md", type: "file", path: "README.md" },
+  { name: "SKILL.md", type: "file", path: "SKILL.md" },
+  { name: "LICENSE", type: "file", path: "LICENSE" },
+  {
+    name: "config", type: "folder", children: [
+      { name: "session-defaults.yaml", type: "file", path: "config/session-defaults.yaml" }
+    ]
+  },
+  {
+    name: "scripts", type: "folder", children: [
+      { name: "session-timer.sh", type: "file", path: "scripts/session-timer.sh" }
+    ]
+  },
+  {
+    name: "templates", type: "folder", children: [
+      { name: "SESSION_LOG.md", type: "file", path: "templates/SESSION_LOG.md" }
+    ]
+  },
+  {
+    name: "examples", type: "folder", children: [
+      { name: "claude-code.md", type: "file", path: "examples/claude-code.md" },
+      { name: "cursor.md", type: "file", path: "examples/cursor.md" },
+      { name: "aider.md", type: "file", path: "examples/aider.md" },
+      { name: "generic.md", type: "file", path: "examples/generic.md" }
+    ]
+  }
+];
+
+let activeFile = null;
+let openFolders = new Set(["config", "scripts", "templates", "examples"]);
+
+function getFileIcon(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const colors = {
+    md: '#519aba',
+    yaml: '#cb171e',
+    yml: '#cb171e',
+    sh: '#4eaa25',
+    txt: '#d4d4d4'
+  };
+  const color = colors[ext] || '#d4d4d4';
+  if (filename === 'LICENSE') {
+    return '<svg viewBox="0 0 16 16" fill="#d4a017"><path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zm0 13c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm-.5-9h1v5h-1V5zm0 6h1v1h-1v-1z"/></svg>';
+  }
+  return '<svg viewBox="0 0 16 16" fill="' + color + '"><path d="M13 4H8.4L7 2H3c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V5c0-.6-.4-1-1-1zM3 3h3.6l1.4 2H13v1H3V3z"/><rect x="2" y="3" width="12" height="10" rx="1" fill="none" stroke="' + color + '" stroke-width="0.5" opacity="0"/><path d="M3.5 4H12.5V12.5H3.5z" fill="none"/><path d="M2 4h12v8.5c0 .3-.2.5-.5.5h-11c-.3 0-.5-.2-.5-.5V4z" fill="' + color + '" opacity="0.15"/><rect x="4" y="2" width="8" height="11" rx="0.5" fill="' + color + '" opacity="0"/><path d="M4 1.5h5.5l3 3V13c0 .3-.2.5-.5.5H4c-.3 0-.5-.2-.5-.5V2c0-.3.2-.5.5-.5z" fill="none" stroke="' + color + '" stroke-width="0.8"/><path d="M9.5 1.5v3h3" fill="none" stroke="' + color + '" stroke-width="0.8"/></svg>';
+}
+
+function getFolderIcon(isOpen) {
+  if (isOpen) {
+    return '<svg viewBox="0 0 16 16" fill="#dcb67a"><path d="M1.5 13h13c.3 0 .5-.2.5-.5V5H8.3L6.8 3H1v9.5c0 .3.2.5.5.5zM1 4h5.2l1.5 2H15v6.5c0 .8-.7 1.5-1.5 1.5h-11C1.7 14 1 13.3 1 12.5V4z" opacity="0.9"/></svg>';
+  }
+  return '<svg viewBox="0 0 16 16" fill="#dcb67a"><path d="M1.5 13h13c.3 0 .5-.2.5-.5v-7c0-.3-.2-.5-.5-.5H7.7L6.2 3H1.5c-.3 0-.5.2-.5.5v9c0 .3.2.5.5.5z" opacity="0.9"/></svg>';
+}
+
+function getChevronSvg() {
+  return '<svg viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="#858585" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function getLanguage(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = {
+    md: 'markdown',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sh: 'bash'
+  };
+  if (filename === 'LICENSE') return 'plaintext';
+  return map[ext] || 'plaintext';
+}
+
+function renderTree(items, depth) {
+  const container = document.createDocumentFragment();
+
+  items.forEach(function(item) {
+    if (item.type === 'folder') {
+      const isOpen = openFolders.has(item.name);
+
+      const folderRow = document.createElement('div');
+      folderRow.className = 'tree-item';
+      folderRow.style.paddingLeft = (12 + depth * 16) + 'px';
+
+      const chevron = document.createElement('span');
+      chevron.className = 'chevron' + (isOpen ? ' open' : '');
+      chevron.innerHTML = getChevronSvg();
+      folderRow.appendChild(chevron);
+
+      const icon = document.createElement('span');
+      icon.className = 'tree-icon';
+      icon.innerHTML = getFolderIcon(isOpen);
+      folderRow.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.textContent = item.name;
+      folderRow.appendChild(label);
+
+      folderRow.addEventListener('click', function() {
+        if (openFolders.has(item.name)) {
+          openFolders.delete(item.name);
+        } else {
+          openFolders.add(item.name);
+        }
+        buildTree();
+      });
+
+      container.appendChild(folderRow);
+
+      const childrenDiv = document.createElement('div');
+      childrenDiv.className = 'folder-children' + (isOpen ? '' : ' collapsed');
+      childrenDiv.appendChild(renderTree(item.children, depth + 1));
+      container.appendChild(childrenDiv);
+    } else {
+      const fileRow = document.createElement('div');
+      fileRow.className = 'tree-item' + (activeFile === item.path ? ' active' : '');
+      fileRow.style.paddingLeft = (12 + depth * 16 + 18) + 'px';
+
+      const icon = document.createElement('span');
+      icon.className = 'tree-icon';
+      icon.innerHTML = getFileIcon(item.name);
+      fileRow.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.textContent = item.name;
+      fileRow.appendChild(label);
+
+      fileRow.addEventListener('click', function() {
+        openFile(item.path, item.name);
+      });
+
+      container.appendChild(fileRow);
+    }
+  });
+
+  return container;
+}
+
+function buildTree() {
+  var treeEl = document.getElementById('fileTree');
+  treeEl.innerHTML = '';
+  treeEl.appendChild(renderTree(TREE_STRUCTURE, 0));
+}
+
+function openFile(path, name) {
+  activeFile = path;
+  buildTree();
+
+  var content = FILES[path] || '// File not found';
+  var lang = getLanguage(name);
+  var panel = document.getElementById('contentPanel');
+
+  var tabBar = document.createElement('div');
+  tabBar.className = 'file-tab-bar';
+
+  var tab = document.createElement('div');
+  tab.className = 'file-tab';
+
+  var tabIconSpan = document.createElement('span');
+  tabIconSpan.className = 'file-tab-icon';
+  tabIconSpan.innerHTML = getFileIcon(name);
+  tab.appendChild(tabIconSpan);
+
+  var tabLabel = document.createElement('span');
+  tabLabel.textContent = name;
+  tab.appendChild(tabLabel);
+
+  tabBar.appendChild(tab);
+
+  var breadcrumb = document.createElement('div');
+  breadcrumb.className = 'breadcrumb';
+  breadcrumb.innerHTML = 'agent-session-skill / <span>' + path + '</span>';
+
+  var wrapper = document.createElement('div');
+  wrapper.className = 'file-content-wrapper';
+
+  var pre = document.createElement('pre');
+  var code = document.createElement('code');
+  code.className = 'language-' + lang;
+  code.textContent = content;
+  pre.appendChild(code);
+  wrapper.appendChild(pre);
+
+  panel.innerHTML = '';
+  panel.appendChild(tabBar);
+  panel.appendChild(breadcrumb);
+  panel.appendChild(wrapper);
+
+  hljs.highlightElement(code);
+}
+
+buildTree();
+</script>
+</body>
+</html>
